@@ -1,16 +1,17 @@
 #include<bits/stdc++.h>
+#include<chrono>
+using namespace std::chrono; 
 using namespace std;
 
 class Graph{ 
-    //int V; //nodes
+    int V; //nodes
     list<pair<int,int> >* adj; 
     vector<int>deg;
     vector<pair<int,int> > edges;
     void dfs(int v, bool visited[]); 
     bool weight;
   	
-public: 	
-	int V;
+public:
     Graph(int V); 
   	double m_;
   	int edgesno;
@@ -23,9 +24,9 @@ public:
     double gnMod();
     vector<int> update();
     void rungn();
-    void bfspath(vector<int> &S,vector<int> P[],map<int,double> &sigma,int s);
-    void dijkspath(vector<int> &S,vector<int> P[],map<int,double> &sigma,int s);
-    void acc_edges(map<pair<int,int>,double> &bet,vector<int>&S,vector<int>P[],map<int,double>&sigma,int s);
+    void bfspath(vector<int> &S,vector<int> P[],vector<double> &sigma,int s);
+    void dijkspath(vector<int> &S,vector<int> P[],vector<double> &sigma,int s);
+    void acc_edges(map<pair<int,int>,double> &bet,vector<int>&S,vector<int>P[],vector<double>&sigma,int s);
     void rescale_e(map<pair<int,int>,double>&bet);
     void answerutil(int v,vector<bool>&vis,vector<int>&comp);
     void answer(vector<vector<int> > &ans);
@@ -33,14 +34,7 @@ public:
    
 
 void Graph::remove_edge(int u,int v){
-	int e=edges.size();
-	for(int i=e-1;i>=0;--i){
-		if((edges[i].first==u && edges[i].second==v) || (edges[i].first==v && edges[i].second==u)){
-			edges.erase(edges.begin()+i);
-			edgesno--;
-			continue;
-		}
-	}
+	edgesno--;
 	list<pair<int,int> >a=adj[v];
 	for(auto it=a.begin();it!=a.end();it++){
 		if(it->first==u){
@@ -63,29 +57,21 @@ void Graph::gnstep(){
     int init_comp=NumberOfconnectedComponents();
     int ncomp=init_comp;
     while(ncomp<=init_comp){
-    	//	cout<<ncomp<<" "<<init_comp<<endl;
         map<pair<int,int>,double> bet=edgebc();
-        //cout<<bet.size()<<endl;
         double ma=-1000000.0;
         for(auto it=bet.begin();it!=bet.end();it++){
         	pair<int,int> pa=it->first;
-        	//cout<<pa.first<<" "<<pa.second<<" "<<it->second<<endl;
             if(ma<it->second){
                 ma=it->second;
             }
         }
-        //cout<<ma<<endl;
         for(auto it=bet.begin();it!=bet.end();it++){
             if(it->second==ma){
                 pair<int,int> pt=it->first;
-                //cout<<pt.first<<" "<<pt.second<<" "<<ma<<endl;
                 remove_edge(pt.first,pt.second);
-                //cout<<"lopop"<<endl;
             }
         }
-        //cout<<"ll"<<endl;
         ncomp = NumberOfconnectedComponents();
-        //cout<<ncomp<<" "<<init_comp<<endl;
     }
 }
 
@@ -167,15 +153,13 @@ void Graph::rungn(){
 				}
 				cout<<endl;
 			}
-			//cout<<"answer"<<endl;
 		}
 		if(edgesno==0){
 			break;
 		}
-		//cout<<edgesno<<endl;
 	}
 	if(bestQ>0.0){
-		//answeru
+		cout<<"Best Number of Communities: "<<ans.size()<<endl;
 		cout<<"Max modularity(Q): "<<bestQ<<endl;
 		for(int i=0;i<ans.size();i++){
 			for(int j=0;j<ans[i].size();j++){
@@ -183,7 +167,6 @@ void Graph::rungn(){
 			}
 			cout<<endl;
 		}
-		//cout<<"answer"<<endl;
 	}
 	else{
 		cout<<"Modularity of Decomposed G: "<<Q<<endl;
@@ -203,17 +186,17 @@ vector<int> Graph::update(){
 
 map<pair<int,int>,double> Graph::edgebc(){
     map<pair<int,int>,double> bet;
-    double ze=0.0;
-    /*for(int i=0;i<V;i++){
-        bet[{i,-1}]=ze;
-    }*/
-    for(int j=0;j<edges.size();j++){
-        bet[{edges[j].first,edges[j].second}]=ze;
+    for(int i=0;i<V;i++){
+    	for(auto j=adj[i].begin();j!=adj[i].end();j++){
+    		if(i<j->first){
+    			bet[{i,j->first}]=0.0;
+    		}
+    	}
     }
     for(int s=0;s<V;s++){
         vector<int> S;
         vector<int>P[V];
-        map<int,double>sigma;
+        vector<double>sigma(V,0.0);
         for(int i=0;i<V;i++){
         	sigma[i]=0.0;
         }
@@ -225,19 +208,13 @@ map<pair<int,int>,double> Graph::edgebc(){
         }
         acc_edges(bet,S,P,sigma,s);
     }
-    /*for(int i=0;i<V;i++){
-    	auto it = bet.find({i,-1});
-    	if(it!=bet.end()){
-    		bet.erase(it);	
-    	}
-    }*/
     //rescale_e(bet);
     return bet;
 }
 
 
-void Graph::acc_edges(map<pair<int,int>,double> &bet,vector<int>&S,vector<int>P[],map<int,double>&sigma,int s){
-    map<int,double> delta;
+void Graph::acc_edges(map<pair<int,int>,double> &bet,vector<int>&S,vector<int>P[],vector<double>&sigma,int s){
+    unordered_map<int,double> delta;
     for(int i=0;i<S.size();i++){
         delta[S[i]]=0.0;
     }
@@ -248,17 +225,9 @@ void Graph::acc_edges(map<pair<int,int>,double> &bet,vector<int>&S,vector<int>P[
         for(int i=0;i<P[w].size();i++){
             int v=P[w][i];
             double c=sigma[v]*coeff;
-            if(bet.find({v,w})!=bet.end()){
-                bet[{v,w}]+=c;
-            }
-            else{
-                bet[{w,v}]+=c;
-            }
+            bet[{min(v,w),max(v,w)}]+=c;
             delta[v]+=c;
         }
-        /*if(w!=s){
-            bet[{w,-1}]+=delta[w];
-        }*/
     }
 }
 
@@ -273,9 +242,8 @@ void Graph::rescale_e(map<pair<int,int>,double>&bet){
 	}
 }
 
-void Graph::bfspath(vector<int> &S,vector<int> P[],map<int,double> &sigma,int s){
-    map<int,int> D;
-    double on=1.0;
+void Graph::bfspath(vector<int> &S,vector<int> P[],vector<double> &sigma,int s){
+    vector<int>D(V,-1);
     sigma[s]=1.0;
     D[s]=0;
     queue<int> q;
@@ -289,7 +257,7 @@ void Graph::bfspath(vector<int> &S,vector<int> P[],map<int,double> &sigma,int s)
         list<pair<int,int> > a=adj[v];
         for(auto i=a.begin();i!=a.end();i++){
             int w=i->first;
-            if(D.find(w)==D.end()){
+            if(D[w]==-1){
                 q.push(w);
                 D[w]=Dv+1;
             }
@@ -302,7 +270,7 @@ void Graph::bfspath(vector<int> &S,vector<int> P[],map<int,double> &sigma,int s)
 }
 
 
-void Graph::dijkspath(vector<int> &S,vector<int> P[],map<int,double> &sigma,int s){
+void Graph::dijkspath(vector<int> &S,vector<int> P[],vector<double> &sigma,int s){
     map<int,int> seen;
     map<int,int> D;
     seen[s]=0;
@@ -395,7 +363,7 @@ void Graph::addEdge(int u,int v, int w){
     edgesno++;
 } 
 
-int main(){
+int main(){ 
     int n,e;
     cin>>n>>e;
     Graph g(n);
@@ -404,6 +372,10 @@ int main(){
     	cin>>x>>y;
     	g.addEdge(x,y,1);
     }
+    auto start = high_resolution_clock::now();
     g.rungn();
+    auto stop = high_resolution_clock::now(); 
+	auto duration = duration_cast<milliseconds>(stop - start); 
+	cout<<"Time taken: "<<duration.count()<<endl;
     return 0;
 }
