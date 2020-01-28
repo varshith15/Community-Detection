@@ -271,8 +271,8 @@ void Graph::bfspath(vector<int> &S,vector<int> P[],vector<double> &sigma,int s){
 
 
 void Graph::dijkspath(vector<int> &S,vector<int> P[],vector<double> &sigma,int s){
-    map<int,int> seen;
-    map<int,int> D;
+ 	vector<int>seen(V,-1);
+    vector<int> D(V,-1)
     seen[s]=0;
     int c=0;
     sigma[s]=1.0;
@@ -289,7 +289,7 @@ void Graph::dijkspath(vector<int> &S,vector<int> P[],vector<double> &sigma,int s
         int dist=temp[0];
         int pred=temp[2];
         int v=temp[3];
-        if(D.find(v)!=D.end()){
+        if(D[v]!=-1){
             continue;
         }
         sigma[v]+=sigma[pred];
@@ -300,7 +300,7 @@ void Graph::dijkspath(vector<int> &S,vector<int> P[],vector<double> &sigma,int s
             int w=i->first;
             int wt=i->second;
             int vw_dist=dist+wt;
-            if(D.find(w)==D.end() && (seen.find(w)==seen.end() || vw_dist < seen[w])){
+            if(D[w]==-1 && (seen[w]==-1 || vw_dist < seen[w])){
                 seen[w]=vw_dist;
                 vector<int> vt;
                 vt.push_back(vw_dist);
