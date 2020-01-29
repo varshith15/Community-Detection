@@ -10,7 +10,7 @@
 	M — no.of edges
 	n — no.of nodes
 	
-— The total time complexity is O(m^2*n). Since you run edge betweenness for each time you remove an edge.
+— The total time complexity is O(m^2*n). Since you run edge betweenness each time you remove an edge.
 
 — In this implementation we use a numerical index called modularity to evaluate how good a division is. 0 modularity indicates that it is no better than randomly choosing communities. The final answer would be the division with the maximum modularity.
 
